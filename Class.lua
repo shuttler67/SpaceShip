@@ -1,4 +1,3 @@
-
 function Class( baseClass )
 
     local new_class = {}
@@ -6,6 +5,20 @@ function Class( baseClass )
 
     local new_class_mt = {__call = function (c, ...)
             local newinst = {}
+            newinst.super = {}
+            local supermt = {}
+            
+            function supermt.__call(t, ...)
+                baseClass.init(t.inst, ...)
+            end
+            
+            function supermt.__index(t, k)
+                return function(self, ...) baseClass[k](self.inst, ...) end
+            end
+            
+            setmetatable(newinst.super, supermt)
+            
+            newinst.super.inst = newinst
             setmetatable( newinst, c )
             if newinst.init then newinst.init(newinst, ...) end
             return newinst
@@ -28,25 +41,20 @@ function Class( baseClass )
         return baseClass
     end
 
-    function new_class:get(tag)
-        if self[tag] == nil then
-            error("tag is not part of class")
-        end
-        return self[tag]
+    --cheap getters and setters
+    function new_class:get(key)
+        assert(self[key] == nil, "key is not part of class")
+        return self[key]
     end
 
-    function new_class:set(tag, value)
-        if self[tag] == nil then
-            error("tag is not part of class")
-        end
-        self[tag] = value
+    function new_class:set(key, value)
+        assert(self[key] == nil, "key is not part of class")
+        self[key] = value
     end
 
+    
     -- Return the super class object of the instance
     -- func is a String
-    function new_class:super(func, ...)
-        baseClass[func](self,...)
-    end
 
     -- Return true if the caller is an instance of theClass
     function new_class:is_a( theClass )

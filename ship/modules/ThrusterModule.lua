@@ -6,33 +6,30 @@ ThrusterModule.northVec = {x = 0, y = -1}
 ThrusterModule.southVec = {x = 0, y = 1}
 ThrusterModule.torqueThreshold = 14
 
-function ThrusterModule:init(_rotation)
+function ThrusterModule:init(rotation)
 
     self.thrustDir = {}
     self.thrusterOn = {}
     self.thrustImpulse = 16
     self.detachedThrustTimer = 0
     
-    local rotation = (_rotation or ShipModule.EAST)
+    rotation = (rotation or ShipModule.EAST)
     local x, y, w, h
     
-    if rotation == ShipModule.NORTH then
-        x, y, w, h = 0, ShipModule.unitHeightHalf * 10/16, ShipModule.unitWidthHalf, ShipModule.unitHeightHalf  * 3/4
-        
-    elseif rotation == ShipModule.SOUTH then
-        x, y, w, h = 0, -ShipModule.unitHeightHalf * 10/16, ShipModule.unitWidthHalf, ShipModule.unitHeightHalf  * 3/4
+    x, y = -self.unitWidthHalf * 10/16, 0
+    x, y = vector_rotate(x, y , -math.rad(rotation))
     
-    elseif rotation == ShipModule.EAST then
-        x, y, w, h = -ShipModule.unitWidthHalf * 10/16, 0, ShipModule.unitWidthHalf  * 3/4, ShipModule.unitHeightHalf
-    
-    elseif rotation == ShipModule.WEST then
-        x, y, w, h = ShipModule.unitWidthHalf * 10/16, 0, ShipModule.unitWidthHalf  * 3/4, ShipModule.unitHeightHalf
+    if rotation == ShipModule.NORTH or rotation == ShipModule.SOUTH then
+        w, h = self.unitWidthHalf, self.unitHeightHalf  * 3/4
+
+    elseif rotation == ShipModule.EAST or rotation == ShipModule.WEST then
+        w, h = self.unitWidthHalf  * 3/4, self.unitHeightHalf
     end
     
     local shape = love.physics.newRectangleShape(x, y, w, h)
 
     local sprite = Sprite(Images.thruster)
-    sprite:createQuadListFromGrid(ShipModule.unitWidth, ShipModule.unitHeight, 3)
+    sprite:createQuadListFromGrid(self.unitWidth, self.unitHeight, 3)
     sprite:addAnimation("quadIndex", "firing", "repeat", 2,1,3, 3, false)
 
     local material = Material.METAL
@@ -54,6 +51,11 @@ function ThrusterModule:attached()
     end
     if self.rotation == ShipModule.WEST then
         self.thrustDir = self.westVec
+    end
+    
+    if self.isStacked then
+        self.sprite.x = self.sprite.x + self.thrustDir.x * ShipModule.unitWidth/6
+        self.sprite.y = self.sprite.y + self.thrustDir.y * ShipModule.unitWidth/6
     end
 end
 
@@ -136,6 +138,24 @@ function ThrusterModule:fire(amount)
 end
 
 function ThrusterModule:connectsTo(rx, ry)
+    if rx == 0 and ry == 0 then return true end
     return math.ceil(self.thrustDir.x * rx + self.thrustDir.y * ry) == -1
 end
 
+function ThrusterModule:canStack()
+    return true
+end
+
+function ThrusterModule:getValidNeighbours()
+    local neighbours = self.super:getValidNeighbours()
+    
+    local directions = {0, 90, 180, 270}
+    
+    for i, v in ipairs(directions) do
+        if v ~= self.rotation then
+            neighbours[i*2-1] = nil
+            neighbours[i*2] = nil
+        end
+    end
+    return neighbours
+end

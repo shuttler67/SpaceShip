@@ -13,6 +13,7 @@ ShipModule.WEST = 180
 function ShipModule:init(shape, sprite, material, rotation)
     self.rotation = (rotation or ShipModule.EAST)
     self.attachedToShip = false
+    self.isStacked = false
     self.moduleX = 0
     self.moduleY = 0
     self.parent = nil --just to tell you its there ;)
@@ -30,11 +31,8 @@ function ShipModule:moveTo(x,y)
 end
 
 function ShipModule:getWorldPos()
-    if self.parent then
-        return self.parent.body:getWorldPoint(self:getLocalPos())
-    else
-        error("No parent")
-    end
+    assert(self.parent, "Cannot find world position, has no parent with body")
+    return self.parent.body:getWorldPoint(self:getLocalPos())
 end
 
 function ShipModule:getLocalPos()
@@ -48,9 +46,12 @@ function ShipModule:connectsTo(rx, ry)
     return true
 end
 
+function ShipModule:canStack()
+    return false
+end
+
 function ShipModule:attached()
     self.attachedToShip = true
-    
 end
 
 function ShipModule:detached()
@@ -64,3 +65,6 @@ function ShipModule:update(dt)
     self.sprite:update(dt)
 end
 
+function ShipModule:getValidNeighbours()
+    return {1, 0, 0, -1, -1, 0, 0, 1}
+end

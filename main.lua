@@ -9,6 +9,7 @@ function love.load(arg)
     --local Location = ""
     
     local resourceLocation = "resources/"
+    local utilityLocation = "utility/"
     local shipLocation = "ship/"
     local moduleLocation = "ship/modules/"
     
@@ -18,11 +19,12 @@ function love.load(arg)
     
     require( resourceLocation .."Images")
     
-    require "Camera"
-    require "Sprite"
-    require "Material"
-    require "Player"
+    require( utilityLocation .. "Camera")
+    require( utilityLocation .."Sprite")
+    require( utilityLocation .."Material")
+    require( utilityLocation .."Player")
     
+    require "cheats"
     require "game"
     
     require( shipLocation .. "BodySprite")
@@ -33,6 +35,7 @@ function love.load(arg)
     require( moduleLocation .."CockpitModule")
     require( moduleLocation .."ThrusterModule")
     require( moduleLocation .."HullModule")
+    require( moduleLocation .."HullCornerModule")
 
     Material.STONE = Material(2.6, 0.75, 0.3)
     Material.METAL = Material(3.1, 0.3, 0.4)
@@ -69,3 +72,5 @@ function math.round(num, idp) -- Not by me [http://lua-users.org/wiki/SimpleRoun
     local mult = 10^(idp or 0)
     return math.floor(num * mult + 0.5) / mult
 end
+
+

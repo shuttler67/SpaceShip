@@ -1,3 +1,7 @@
+function vector_rotate(x, y, r)
+    return x * math.cos(r) + y * math.sin(r), x * -math.sin(r) + y * math.cos(r)
+end
+
 Camera = Class()
 Camera._x = 0
 Camera._y = 0
@@ -95,21 +99,33 @@ function Camera:newLayer(speedRatio, layerKey)
 end
 
 
-function Camera:getMousePosition(x, y)
-    local mx, my = x or love.mouse.getX(), y or love.mouse.getY()
-    mx, my = mx + self._x, my + self._y 
-    mx, my = mx + self.offsetX, my + self.offsetY 
-    mx, my = mx * self.scaleX, my * self.scaleY
-    mx, my = mx * math.cos(self.rotation) + my * math.sin(self.rotation), mx * -math.sin(self.rotation) + my * math.cos(self.rotation)
-    mx, my = mx - self.offsetX, my - self.offsetY 
-    return mx, my
+function Camera:getMousePosition(x, y, layerKey)
+    x, y = x or love.mouse.getX(), y or love.mouse.getY()
+    
+    if layerKey then
+        x, y = x + self.layers[layerKey].x, y + self.layers[layerKey].y 
+    else
+        x, y = x + self._x, y + self._y 
+    end
+    
+    x, y = x + self.offsetX, y + self.offsetY 
+    x, y = x * self.scaleX, y * self.scaleY
+    x, y = vector_rotate(x, y, self.rotation)
+    x, y = x - self.offsetX, y - self.offsetY 
+    return x, y
 end
 
-function Camera:getTranslatedPosition(x, y)
+function Camera:getTranslatedPosition(x, y, layerKey)
     x, y = x - self.offsetX, y - self.offsetY 
-    x, y = x * math.cos(-self.rotation) + y * math.sin(-self.rotation), x * -math.sin(-self.rotation) + y * math.cos(-self.rotation)
+    x, y = vector_rotate(x, y, -self.rotation)
     x, y = x * 1/self.scaleX, y * 1/self.scaleY
-    x, y = x + self.offsetX, y + self.offsetY 
-    x, y = x - self._x, y - self._y 
+    x, y = x + self.offsetX, y + self.offsetY
+    
+    if layerKey then
+        x, y = x - self.layers[layerKey].x, y - self.layers[layerKey].y 
+    else
+        x, y = x - self._x, y - self._y 
+    end
+    
     return x, y
 end

@@ -7,9 +7,20 @@ function ModuleManager:init()
 end
 
 function ModuleManager:addModule(ship_module, x, y)
+    
+    if self:occupied(x, y) then
+        if ship_module:canStack() and not self:occupied(x, y, true) then
+            self:set(x, y, ship_module, true)
+            ship_module.isStacked = true
+        else
+            return false
+        end
+    else
+        self:set(x, y, ship_module)
+    end
+    
     ship_module:moveTo(x,y)
     
-    self:set(x, y, ship_module)
     self.list[ship_module] = true
     
     if ship_module:is_a(CockpitModule) then
@@ -19,16 +30,26 @@ function ModuleManager:addModule(ship_module, x, y)
 end
 
 --module coords
-function ModuleManager:get(x, y)
+function ModuleManager:get(x, y, isStacked)
+    if isStacked then
+        return self.hashmap[x .. "." .. y]
+    end
     return self.hashmap[x .. "," .. y]
 end
 
-function ModuleManager:set(x, y, v)
-    self.hashmap[x .. "," .. y] = v
+function ModuleManager:set(x, y, v, shouldStack)
+    if shouldStack then
+        self.hashmap[x .. "." .. y] = v
+    else
+        self.hashmap[x .. "," .. y] = v
+    end
 end
 
-function ModuleManager:occupied(x, y)
-    return not self.hashmap[x .. "," .. y] == nil
+function ModuleManager:occupied(x, y, isStacked)
+    if isStacked then
+        return not (self.hashmap[x .. "." .. y] == nil)
+    end
+    return not (self.hashmap[x .. "," .. y] == nil)
 end
 
 function ModuleManager:getCore()
@@ -37,6 +58,7 @@ end
 
 function ModuleManager:remove(ship_module)
     self:set(ship_module.moduleX, ship_module.moduleY, nil)
+    self:set(ship_module.moduleX, ship_module.moduleY, nil, true)
     self.list[ship_module] = nil
 end
 

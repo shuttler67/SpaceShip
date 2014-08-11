@@ -13,7 +13,7 @@ function Class( baseClass )
             end
             
             function supermt.__index(t, k)
-                return function(self, ...) baseClass[k](self.inst, ...) end
+                return function(s, ...) return baseClass[k](s.inst, ...) end
             end
             
             setmetatable(newinst.super, supermt)

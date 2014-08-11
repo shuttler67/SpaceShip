@@ -2,27 +2,26 @@ HullCornerModule = Class(ShipModule)
 
 function HullCornerModule:init(rotation)
     
-    local points = {-ShipModule.unitWidthHalf, -ShipModule.unitHeightHalf,
-        -ShipModule.unitWidthHalf, ShipModule.unitHeightHalf, 
-        ShipModule.unitWidthHalf, ShipModule.unitHeightHalf,
-        ShipModule.unitWidthHalf, -ShipModule.unitHeightHalf}
+    local points = {-self.unitWidthHalf, -self.unitHeightHalf,
+        -self.unitWidthHalf, self.unitHeightHalf, 
+        self.unitWidthHalf, self.unitHeightHalf,
+        self.unitWidthHalf, -self.unitHeightHalf}
     
     if rotation == ShipModule.NORTH then
-        points[1] = nil
-        points[2] = nil
+        table.remove(points, 2)
+        table.remove(points, 1)
         
+    elseif rotation == ShipModule.WEST then
+        table.remove(points, 4)
+        table.remove(points, 3)
+    
     elseif rotation == ShipModule.SOUTH then
-        points[5] = nil
-        points[6] = nil
+        table.remove(points, 6)
+        table.remove(points, 5)
     
     elseif rotation == ShipModule.EAST then
-        points[3] = nil
-        points[4] = nil
-    
-    elseif rotation == ShipModule.WEST then
-        points[7] = nil
-        points[8] = nil
-        
+        table.remove(points, 8)
+        table.remove(points, 7)
     end
     
     local shape = love.physics.newPolygonShape(unpack(points))
@@ -31,20 +30,20 @@ function HullCornerModule:init(rotation)
     
     local material = Material.METAL
     
-    self.super(shape, sprite, material)
+    self.super(shape, sprite, material, rotation)
 end
 
 function HullCornerModule:connectsTo(rx, ry)
-    if self.rotation == ShipModule.NORTH then
+    if self.rotation == ShipModule.EAST then
         return (rx == 1 and ry == 0) or (rx == 0 and ry == 1)
         
-    elseif self.rotation == ShipModule.SOUTH then
+    elseif self.rotation == ShipModule.WEST then
         return (rx == -1 and ry == 0) or (rx == 0 and ry == 1)
     
-    elseif self.rotation == ShipModule.EAST then
+    elseif self.rotation == ShipModule.NORTH then
         return (rx == -1 and ry == 0) or (rx == 0 and ry == -1)
     
-    elseif self.rotation == ShipModule.WEST then
+    elseif self.rotation == ShipModule.SOUTH then
         return (rx == 1 and ry == 0) or (rx == 0 and ry == -1)
     end
 end

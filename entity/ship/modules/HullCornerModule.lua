@@ -1,11 +1,11 @@
-HullCornerModule = Class(ShipModule)
+HullCornerModule = Class("HullCornerModule", ShipModule)
 
 function HullCornerModule:init(rotation)
     
-    local points = {-self.unitWidthHalf, -self.unitHeightHalf,
-        -self.unitWidthHalf, self.unitHeightHalf, 
-        self.unitWidthHalf, self.unitHeightHalf,
-        self.unitWidthHalf, -self.unitHeightHalf}
+    local points = {-ShipModule.unitWidthHalf, -ShipModule.unitHeightHalf,
+        -ShipModule.unitWidthHalf, ShipModule.unitHeightHalf, 
+        ShipModule.unitWidthHalf, ShipModule.unitHeightHalf,
+        ShipModule.unitWidthHalf, -ShipModule.unitHeightHalf}
     
     if rotation == ShipModule.NORTH then
         table.remove(points, 2)
@@ -28,9 +28,9 @@ function HullCornerModule:init(rotation)
     
     local sprite = Sprite(Images.hull_corner)
     
-    local material = Material.METAL
+    local material = Materials.METAL
     
-    self.super(shape, sprite, material, rotation)
+    self.super:init(shape, sprite, material, rotation)
 end
 
 function HullCornerModule:connectsTo(rx, ry)

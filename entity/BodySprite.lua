@@ -1,14 +1,6 @@
-BodySprite = Class()
+BodySprite = Class("BodySprite")
 
 function BodySprite:init(world, x, y)
-    --adds itself to a global table called "bodysprites" (if any)
-    --useful if you update and draw the BodySprites in that table
-    if bodysprites then
-        if type(bodysprites) == "table" then
-            table.insert(bodysprites, self)
-        end
-    end
-
     self.world = world
     self.body = love.physics.newBody(world, x, y, "dynamic")
     self.body:setLinearDamping(0.02)
@@ -24,8 +16,10 @@ function BodySprite:update(dt)
 end
 
 function BodySprite:draw()
-    local x,y = self.body:getLocalCenter()
-    love.graphics.print(x..","..y.." Angle:".. math.deg(self.body:getAngle()),10, 10)
+--    love.graphics.setColor(Colors.white)
+--    local x,y = self.body:getLocalCenter()
+--    love.graphics.print(x..","..y.." Angle:".. math.deg(self.body:getAngle()),10, 10)
+    
 
     for _,v in ipairs(self.sprites) do
         if v.x then
@@ -39,7 +33,7 @@ function BodySprite:draw()
     if showBodySpriteShapes then
         for _, v in pairs(self.fixtures) do
             local shape = v:getShape()
-            love.graphics.setColor(0,128,64)
+            love.graphics.setColor(Colors.green)
             if shape:typeOf("PolygonShape") then
                 love.graphics.polygon("line", self.body:getWorldPoints(shape:getPoints()))
 
@@ -100,4 +94,16 @@ end
 function BodySprite:removeShape(key)
     self.fixtures[key]:destroy()
     self.fixtures[key] = nil
+end
+
+function BodySprite:setCategory(...)
+    for _, v in pairs(self.fixtures) do
+        v:setCategory(...)
+    end
+end
+
+function BodySprite:setMask(...)
+    for _, v in pairs(self.fixtures) do
+        v:setMask(...)
+    end
 end

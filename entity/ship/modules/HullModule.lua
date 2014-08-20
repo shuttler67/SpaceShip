@@ -1,14 +1,14 @@
-HullModule = Class(ShipModule)
+HullModule = Class("HullModule", ShipModule)
 
 function HullModule:init()
     
-    local shape = love.physics.newRectangleShape(self.unitWidth, self.unitHeight)
+    local shape = love.physics.newRectangleShape(ShipModule.unitWidth, ShipModule.unitHeight)
     
     local sprite = Sprite(Images.hull)
     
-    local material = Material.METAL
+    local material = Materials.METAL
     
-    self.super(shape, sprite, material)
+    self.super:init(shape, sprite, material)
 end
 
 function HullModule:getValidNeighbours()

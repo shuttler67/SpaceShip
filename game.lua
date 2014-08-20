@@ -1,48 +1,30 @@
-function game_load()
-    player = Player()
-    player:setCameraslack(love.window.getWidth()/5, love.window.getHeight()/5)
+game = {} -- A game state
+
+function game:init()
+    self.player = Player()
+    self.player:setCameraslack(love.window.getWidth()/5, love.window.getHeight()/5)
     
-    camera = Camera()
-    camera:setOffset(love.window.getWidth()/2, love.window.getHeight()/2)
+    self.camera = Camera()
+    self.camera:zoom(1)
     
-    camera:newLayer(0.2)
+    self.camera:newLayer(0.2)
     
     love.physics.setMeter(32)
-    astroid_field = love.physics.newWorld()
+
+    self.world = love.physics.newWorld()
     
-    bodysprites = {}
+    self.entities = {}
     
-    modules = ModuleManager()
-    modules:addModule(CockpitModule(), 0, 0)
-    modules:addModule(HullModule(), 0, -1)
-    modules:addModule(HullModule(), 0, 1)
-    modules:addModule(HullModule(), 1.5, 0)
-    modules:addModule(HullModule(), 2.5, 0)
-    modules:addModule(HullModule(), 1,1)
-    modules:addModule(HullModule(), 1,-1)
-    modules:addModule(HullCornerModule(ShipModule.EAST), 2.5, -1)
-    modules:addModule(HullCornerModule(ShipModule.SOUTH), 2.5, 1)
-    modules:addModule(ThrusterModule(ShipModule.WEST), -1, -1)
-    modules:addModule(ThrusterModule(ShipModule.WEST), -1, 1)
-    modules:addModule(ThrusterModule(ShipModule.WEST), 1.5, 0)
-    modules:addModule(ThrusterModule(ShipModule.EAST), 3.5, 0)
-    modules:addModule(ThrusterModule(ShipModule.EAST), 1, -1)
-    modules:addModule(ThrusterModule(ShipModule.EAST), 1, 1)
-    modules:addModule(ThrusterModule(ShipModule.SOUTH), 0, 2)
-    modules:addModule(ThrusterModule(ShipModule.NORTH), 0, -2)
-    ship = Ship(astroid_field, 200, 300, modules)
-    ship.body:applyLinearImpulse(1000,-1000)
+    self.enemies = {}
     
-    ship:validate()
-    
-    wall = {}
-    wall.body = love.physics.newBody(astroid_field, 0, 0, "static")
-    wall.shape = love.physics.newChainShape(true, 0, 0, 0, 600, 3500, 600, 3500, 0)
-    wall.fixture = love.physics.newFixture(wall.body, wall.shape)
-    wall.draw = function(self) love.graphics.setColor(255,255,255) 
+    self.wall = {}
+    self.wall.body = love.physics.newBody(self.world, 0, 0, "static")
+    self.wall.shape = love.physics.newChainShape(true, 0, 0, 0, 600, 3500, 600, 3500, 0)
+    self.wall.fixture = love.physics.newFixture(self.wall.body, self.wall.shape)
+    self.wall.draw = function(self) love.graphics.setColor(Colors.white) 
             love.graphics.line(self.shape:getPoints()) 
         end
-    Material.WOOD:apply(wall.fixture)
+    Materials.WOOD:apply(self.wall.fixture)
     
     local playMaterialSound = Material:getCallbackForSoundOnImpact()
     
@@ -55,44 +37,117 @@ function game_load()
     end
 
     local function preSolve(a, b, coll)
-       
+        
     end
 
     local function postSolve(a, b, coll, normalimpulse1, tangentimpulse1, normalimpulse2, tangentimpulse2)
-       
+        local fixtures = {a, b}
+        local normalimpulses = {normalimpulse2, normalimpulse1}
+        
+        for i = 1, 2 do
+            local bodyUserData = fixtures[i]:getBody():getUserData()
+            if bodyUserData == "Player" then
+                for ship_module, fixture in pairs(self.player.ship.fixtures) do
+                    if fixtures[i] == fixture and normalimpulses[i] ~= nil then
+                        ship_module:inflictDamage(math.abs(math.floor(normalimpulses[i] / 1800 * 1/fixture:getDensity())), "collision")
+                    end
+                end
+                
+            elseif string.match(tostring(bodyUserData), "Enemy") == "Enemy" then
+                if self.enemies[bodyUserData] ~= nil then 
+                    for ship_module, fixture in pairs(self.enemies[bodyUserData].ship.fixtures) do
+                        if fixtures[i] == fixture and normalimpulses[i] ~= nil then
+                            ship_module:inflictDamage(math.abs(math.floor(normalimpulses[i] / 1800 * 1/fixture:getDensity())), "collision")
+                        end
+                    end
+                end
+            end
+        end
     end
     
-    astroid_field:setCallbacks(beginContact, endContact, preSolve, postSolve)
-    
-    player:followBody(ship.body)
+    self.world:setCallbacks(beginContact, endContact, preSolve, postSolve)
 end
 
-function game_update(dt)
-    astroid_field:update(dt)
+function game:enter(prev, player_modules)
+    love.graphics.setBackgroundColor(Colors.black)
+
+    local player_ship = Ship(self.world, 200, 300, player_modules)
+    player_ship.body:applyLinearImpulse(2000, 0)
+            
+    self.player:setShip(player_ship)
+end
+
+function game:leave()
     
-    player:update(dt, camera)
+end
+
+function game:getShipModules()
+    return self.player.ship.modules
+end
+   
+function game:update(dt)
+    self.world:update(dt)
     
-    for _,v in ipairs(bodysprites) do
+    self.player:update(dt, self.camera)
+    
+    for _,v in ipairs(self.entities) do
         v:update(dt)
     end
     
 end
 
-function game_draw()
+function game:draw()
+    love.graphics.setColor(Colors.white)
     
-    camera:set(0.2)
-    
-    love.graphics.setColor(255,255,255)
+    self.camera:set(0.2)
+
     love.graphics.draw(Images.starscape, -50, -45)
     
-    camera:unset()
-    camera:set()
+    self.camera:unset()
+    self.camera:set()
     
-    wall:draw()
+    love.graphics.setColor(Colors.black)
     
-    for _, v in ipairs(bodysprites) do
+    self.wall:draw()
+    
+    self.player:draw()
+    
+    for _, v in ipairs(self.entities) do
         v:draw()
     end
+    if showContacts then
+        for _, v in ipairs(self.world:getContactList()) do
+            local x1, y1, x2, y2 =  v:getPositions()
+            love.graphics.setColor(Colors.red)
+            if x1 and y1 then
+                love.graphics.circle("fill", x1, y1, 5)
+            end
+            love.graphics.setColor(Colors.green)
+            if x2 and y2 then
+                love.graphics.circle("fill", x2, y2, 3)
+            end
+        end
+    end
     
-    camera:unset()
+    self.camera:unset()    
+end
+
+function game.mousepressed(x, y, button)
+
+end
+
+function game.mousereleased(x, y, button)
+
+end
+
+function game.keypressed(key)
+
+end
+
+function game.keyreleased(key)
+    
+end
+
+function game.focus(f)
+
 end

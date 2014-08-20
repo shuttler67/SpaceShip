@@ -1,9 +1,11 @@
-CockpitModule = Class(ShipModule)
+CockpitModule = Class("CockpitModule", ShipModule)
 
 function CockpitModule:init(rotation)
-    rotation = rotation or ShipModule.EAST
+    rotation = rotation or ShipModule.NORTH
     
-    local x, y = vector_rotate(ShipModule.unitWidth/4, 0 , -rotation)
+    local w, h
+    local pos = Vector(ShipModule.unitWidth/4, 0)
+    pos:rotate( -math.rad(rotation))
     
     if rotation == ShipModule.NORTH or rotation == ShipModule.SOUTH then
         w, h = self.unitWidth, self.unitHeight  * 1.5
@@ -12,19 +14,19 @@ function CockpitModule:init(rotation)
         w, h = self.unitWidth  * 1.5, self.unitHeight
     end
     
-    local shape = love.physics.newRectangleShape(x, y, w, h)
+    local shape = love.physics.newRectangleShape(pos.x, pos.y, w, h)
     
     local sprite = Sprite(Images.cockpit)
     
-    local material = Material.METAL
+    local material = Materials.METAL
     
-    self.super(shape, sprite, material, rotation)
+    self.super:init(shape, sprite, material, rotation)
 end
 
 function CockpitModule:getValidNeighbours()
     local neighbours = self.super:getValidNeighbours()
     
-    local directions = {0, 90, 180, 270}
+    local directions = {0, 270, 180, 90}
     
     local j = 0
     for i, v in ipairs(neighbours) do

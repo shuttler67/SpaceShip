@@ -1,13 +1,15 @@
-Ship = Class(BodySprite)
+Ship = Class("Ship", BodySprite)
 
 function Ship:init(world, x, y, modules)
-    self.super(world, x, y)
+    self.super:init(world, x, y)
     self.modules = modules
     self.modules:each(self.addModule, self)
     self.body:resetMassData()
+    self:resetMovementData()
 end
 
 function Ship:addModule(ship_module)
+    
     ship_module.parent = self
     local x,y = ship_module:getLocalPos() 
     
@@ -28,29 +30,30 @@ end
 function Ship:update(dt)
     self.super:update(dt)
     self.modules:each(function (m) m:update(dt) end)
+    self:resetMovementData()
 end
 
 function Ship:draw()
     self.super:draw()
     
     if showModulePositions then
-        love.graphics.setColor(0,0,0)
+        love.graphics.setColor(Colors.black)
         self.modules:each(function(m) 
             local x,y = m:getWorldPos()
             love.graphics.circle("fill", x, y, 5) end)
     end
 end
 
-function Ship:removeModule(ship_module, detach_disconnected)
+function Ship:removeModule(ship_module, debris_list)
     self.modules:remove(ship_module)
     self:removeShape(ship_module)
     self:removeSprite(ship_module.sprite)
     
-    if not (detach_disconnected == false) then
+    if debris_list then
         local disconnected = self:findDisconnectedModules()
         
         for k,v in pairs(disconnected) do
-            self:detachModule(v)
+            table.insert(debris_list, self:detachModule(v))
         end
     end
 end
@@ -101,7 +104,7 @@ function Ship:findDisconnectedModules()
     end
     
     local disconnected = {}
-    for _module in pairs(modules.list) do
+    for _module in pairs(self.modules.list) do
         if _module.timestamp ~= timestamp then
             table.insert(disconnected, _module)
         end
@@ -111,7 +114,7 @@ function Ship:findDisconnectedModules()
 end
 
 function Ship:detachModule(ship_module)
-    self:removeModule(ship_module, false)
+    self:removeModule(ship_module)
     ship_module:detached()
     
     local x,y = ship_module:getWorldPos()
@@ -120,5 +123,50 @@ function Ship:detachModule(ship_module)
     debris.body:setAngle(self.body:getAngle())
     debris.body:setLinearVelocity(self.body:getLinearVelocity())
     debris.body:setAngularVelocity(self.body:getAngularVelocity())
+    
+    return debris
 end
 
+function Ship:findDamagedModules()
+    local damagedModules = {}
+    for _module in pairs(self.modules.list) do
+        if _module.health <= 0 then
+            table.insert(damagedModules, _module)
+        end
+    end
+    return damagedModules
+end
+
+        
+function Ship:resetMovementData()
+    self.isMovingDown = false
+    self.isMovingUp = false
+    self.isMovingLeft = false
+    self.isMovingRight = false
+    self.isTurningLeft = false
+    self.isTurningRight = false
+end
+
+function Ship:moveDown()
+    self.isMovingDown = true
+end
+
+function Ship:moveUp()
+    self.isMovingUp = true
+end
+
+function Ship:moveLeft()
+    self.isMovingLeft = true
+end
+
+function Ship:moveRight()
+    self.isMovingRight = true
+end
+
+function Ship:turnLeft()
+    self.isTurningLeft = true
+end
+
+function Ship:turnRight()
+    self.isTurningRight = true
+end

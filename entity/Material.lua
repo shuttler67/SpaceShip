@@ -1,4 +1,4 @@
-Material = Class()
+Material = Class("Material")
 
 Material.isSoundEnabled = false
 
@@ -8,7 +8,7 @@ function Material.getCallbackForSoundOnImpact()
     return function(a, b, coll)
         for _, f in pairs({a, b}) do
             if f:getUserData() then
-                if f:getUserData():is_a(Material) then
+                if Material:made(f:getUserData()) then
                     f:getUserData():playSound()
     end end end end
 end

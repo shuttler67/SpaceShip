@@ -3,69 +3,78 @@
 function love.load(arg)
     if arg[#arg] == "-debug" then require("mobdebug").start() end
 
-    love.window.setMode(600,600,{resizable = true})
-    love.graphics.setBackgroundColor(0,0,0)
+    for _,mode in pairs(love.window.getFullscreenModes(1)) do for k,v in pairs(mode) do print(k, v) end end
+    print(love.system.getClipboardText())
+    love.window.setMode(1280 , 960,{})
     
     --local Location = ""
     
     local resourceLocation = "resources/"
     local utilityLocation = "utility/"
-    local shipLocation = "ship/"
-    local moduleLocation = "ship/modules/"
+    local entityLocation = "entity/"
+    local itemLocation = "item/"
+    local inventoryLocation = "inventory/"
+    
+    --local blockLocation = entityLocation .. "block/"
+    local shipLocation = entityLocation .. "ship/"
+    
+    local moduleLocation = shipLocation .. "modules/"
     
     -- REQUIRE ALL THEM FILES
     
     require "Class"
-    
-    require( resourceLocation .."Images")
-    
-    require( utilityLocation .. "Camera")
-    require( utilityLocation .."Sprite")
-    require( utilityLocation .."Material")
-    require( utilityLocation .."Player")
-    
-    require "cheats"
     require "game"
+    require "edit"
     
-    require( shipLocation .. "BodySprite")
+    require( utilityLocation .. "Vector")
+    require( utilityLocation .. "Camera")
+    require( utilityLocation .. "Sprite")
+    require( utilityLocation .. "cheats")
+    Gamestate = require( utilityLocation .. "gamestate")
+    
+    require( entityLocation .."Player")
+    require( entityLocation .."Material")
+    require( entityLocation .. "BodySprite")
+    
+    require( itemLocation .. "Item" )
+    require( itemLocation .. "ItemStack" )
+    require( itemLocation .. "ItemEntity" )
+    require( itemLocation .. "ModuleItem" )
+    require( itemLocation .. "ModuleItemEntity" )
+    
+    require( inventoryLocation .. "Slot" ) 
+    
     require( shipLocation .."ShipModule")
     require( shipLocation .."ModuleManager")
     require( shipLocation .."Ship")
     require( shipLocation .."ShipDebris")
+    
     require( moduleLocation .."CockpitModule")
     require( moduleLocation .."ThrusterModule")
     require( moduleLocation .."HullModule")
     require( moduleLocation .."HullCornerModule")
 
-    Material.STONE = Material(2.6, 0.75, 0.3)
-    Material.METAL = Material(3.1, 0.3, 0.4)
-    Material.GLASS = Material(1.8, 0.2, 0.7)
-    Material.WOOD = Material(0.9, 0.6, 0.5)
-    Material.FLESH = Material(2, 0.9, 0.3)
-    Material.PLASTIC = Material(0.9, 0.4, 0.7)
-    Material.RUBBER = Material(1.7, 0.9, 0.9)
+    require( resourceLocation .."Images")
+    require( resourceLocation .."Colors")
+    require( resourceLocation .."Materials")
     
-    game_load()
+    Gamestate.registerEvents()
+    Gamestate.push(edit)
 end
 
-function love.update(dt)
-    game_update(dt)
+function love.keyreleased(key)
+    if key == "e" then
+        if Gamestate.current() == game then 
+            Gamestate.switch(edit, game:getShipModules())
+            
+        elseif Gamestate.current() == edit then
+            Gamestate.switch(game, edit:getShipModules())
+        end
+    end
 end
 
-function love.draw()
-    game_draw() 
-end
-
-function love.mousepressed(x, y, button)
-
-end
-
-function love.mousereleased(x, y, button)
-
-end
-
-function love.focus(f)
-
+function math.clamp(x, min, max)
+    return x < min and min or (x > max and max or x)
 end
 
 function math.round(num, idp) -- Not by me [http://lua-users.org/wiki/SimpleRound](http://lua-users.org/wiki/SimpleRound)
@@ -73,4 +82,14 @@ function math.round(num, idp) -- Not by me [http://lua-users.org/wiki/SimpleRoun
     return math.floor(num * mult + 0.5) / mult
 end
 
+function math.truncate(n, max)
+    while n >= max do
+        n = n - max
+    end
+    while n < 0 do
+        n = n + max
+    end
+    
+    return n
+end
 

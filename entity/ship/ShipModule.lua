@@ -1,4 +1,4 @@
-ShipModule = Class()
+ShipModule = Class("ShipModule")
 
 ShipModule.unitWidth = 32
 ShipModule.unitHeight = 32
@@ -11,11 +11,17 @@ ShipModule.SOUTH = 90
 ShipModule.WEST = 180
 
 function ShipModule:init(shape, sprite, material, rotation)
-    self.rotation = (rotation or ShipModule.EAST)
+    self.rotation = (rotation or ShipModule.NORTH)
     self.attachedToShip = false
     self.isStacked = false
+    
     self.moduleX = 0
     self.moduleY = 0
+    
+    self.max_health = 100
+    self.health = 100
+    self.lastDamageDealt = ""
+    
     self.parent = nil --just to tell you its there ;)
     self.shape = shape
     self.sprite = sprite
@@ -31,12 +37,16 @@ function ShipModule:moveTo(x,y)
 end
 
 function ShipModule:getWorldPos()
-    assert(self.parent, "Cannot find world position, has no parent with body")
+    assert(self.parent.body, "Cannot find world position, has no parent with body")
     return self.parent.body:getWorldPoint(self:getLocalPos())
 end
 
 function ShipModule:getLocalPos()
-    return self.moduleX * self.unitWidth, self.moduleY * self.unitHeight
+    return self.moduleX * ShipModule.unitWidth, self.moduleY * ShipModule.unitHeight
+end
+
+function ShipModule:getModulePos()
+    return self.moduleX, self.moduleY
 end
 
 --Returns true if the module can connect in the (rx, ry) direction.
@@ -68,3 +78,17 @@ end
 function ShipModule:getValidNeighbours()
     return {1, 0, 0, -1, -1, 0, 0, 1}
 end
+
+function ShipModule:getHealth()
+    return self.health
+end
+
+function ShipModule:restoreToFullHealth()
+    self.health = self.max_health
+end
+
+function ShipModule:inflictDamage(amount, damageType)
+    self.health = self.health - amount
+    self.lastDamageDealt = damageType
+end
+

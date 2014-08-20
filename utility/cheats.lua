@@ -2,3 +2,4 @@
 
 showBodySpriteShapes = false
 showModulePositions = false
+showContacts = true

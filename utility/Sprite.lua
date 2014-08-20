@@ -1,4 +1,4 @@
-SpriteAnimation = Class()
+SpriteAnimation = Class("SpriteAnimation")
 -- A Class which can change a given value over time repetitively in different ways
 function SpriteAnimation:init(value_to_be_animated, anim_type, start, step, limit, refresh_rate)
     local is_valid = false
@@ -68,7 +68,7 @@ end
 
 
 
-Sprite = Class()
+Sprite = Class("Sprite")
 
 -- every arg but "image" is not required
 function Sprite:init(image, quadList, r, sx, sy, ox, oy, kx, ky)
@@ -167,8 +167,6 @@ end
 
 
 function Sprite:draw(x, y, r)
-    love.graphics.setColor(0,0,0)
-    love.graphics.print(self.quadIndex,10, 30)
     love.graphics.setColor(255,255,255)
 
     if not self.quadList then --too lazy to switch order and take out the "not"

@@ -1,4 +1,4 @@
-ModuleManager = Class()
+ModuleManager = Class("ModuleManager")
 
 function ModuleManager:init()
     self.list = {}
@@ -23,7 +23,7 @@ function ModuleManager:addModule(ship_module, x, y)
     
     self.list[ship_module] = true
     
-    if ship_module:is_a(CockpitModule) then
+    if CockpitModule:made(ship_module) then
         self.coreX, self.coreY = x,y
     end
     return ship_module

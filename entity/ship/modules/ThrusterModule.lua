@@ -1,9 +1,9 @@
-ThrusterModule = Class(ShipModule)
+ThrusterModule = Class("ThrusterModule", ShipModule)
 
-ThrusterModule.eastVec = {x = 1, y = 0}
-ThrusterModule.westVec = {x = -1, y = 0}
-ThrusterModule.northVec = {x = 0, y = -1}
-ThrusterModule.southVec = {x = 0, y = 1}
+ThrusterModule.eastVec = Vector(1, 0)
+ThrusterModule.westVec = Vector(-1, 0)
+ThrusterModule.northVec = Vector(0, -1)
+ThrusterModule.southVec = Vector(0, 1)
 ThrusterModule.torqueThreshold = 14
 
 function ThrusterModule:init(rotation)
@@ -14,27 +14,26 @@ function ThrusterModule:init(rotation)
     self.detachedThrustTimer = 0
     
     rotation = (rotation or ShipModule.EAST)
-    local x, y, w, h
-    
-    x, y = -self.unitWidthHalf * 10/16, 0
-    x, y = vector_rotate(x, y , -math.rad(rotation))
+    local w, h
+    local pos = Vector(-ShipModule.unitWidthHalf * 10/16, 0)
+    pos:rotate( -math.rad(rotation))
     
     if rotation == ShipModule.NORTH or rotation == ShipModule.SOUTH then
-        w, h = self.unitWidthHalf, self.unitHeightHalf  * 3/4
+        w, h = ShipModule.unitWidthHalf, ShipModule.unitHeightHalf  * 3/4
 
     elseif rotation == ShipModule.EAST or rotation == ShipModule.WEST then
-        w, h = self.unitWidthHalf  * 3/4, self.unitHeightHalf
+        w, h = ShipModule.unitWidthHalf  * 3/4, ShipModule.unitHeightHalf
     end
     
-    local shape = love.physics.newRectangleShape(x, y, w, h)
+    local shape = love.physics.newRectangleShape(pos.x, pos.y, w, h)
 
     local sprite = Sprite(Images.thruster)
-    sprite:createQuadListFromGrid(self.unitWidth, self.unitHeight, 3)
+    sprite:createQuadListFromGrid(ShipModule.unitWidth, ShipModule.unitHeight, 3)
     sprite:addAnimation("quadIndex", "firing", "repeat", 2,1,3, 3, false)
 
-    local material = Material.METAL
+    local material = Materials.METAL
 
-    self.super(shape, sprite, material, rotation)
+    self.super:init(shape, sprite, material, rotation)
 end
 
 function ThrusterModule:attached()
@@ -68,12 +67,13 @@ function ThrusterModule:detached()
 end
 
 function ThrusterModule:calculateTorque()
-    local COMx, COMy = self.parent.body:getLocalCenter()
-    local x,y = self:getLocalPos()
+    assert(self.parent,"Cannot calculateTorque: No parent")
+    local COM = Vector(self.parent.body:getLocalCenter())
+    local pos = Vector(self:getLocalPos())
     
-    local dx, dy = COMx - x, COMy - y
+    local delta = COM - pos
     
-    return dx * self.thrustDir.y - dy * self.thrustDir.x
+    return delta:crossProduct(self.thrustDir)
 end
 
 function ThrusterModule:update(dt)
@@ -82,29 +82,19 @@ function ThrusterModule:update(dt)
         
         local torque = self:calculateTorque()
         local core = self.parent.modules:getCore()
-        local function truncate(n, max)
-            while n >= max do
-                n = n - max
-            end
-            while n < 0 do
-                n = n + max
-            end
-            
-            return n
-        end
         
-        if love.keyboard.isDown("up") and self.rotation == truncate(core.rotation + 180, 360) or 
-            love.keyboard.isDown("down") and self.rotation == core.rotation then
+        if self.parent.isMovingUp and self.rotation == math.truncate(core.rotation + 180, 360) or 
+            self.parent.isMovingDown and self.rotation == core.rotation then
             
             self:fire(self.thrustImpulse)
             
-        elseif love.keyboard.isDown("a") and self.rotation == truncate(core.rotation + 90, 360) or 
-            love.keyboard.isDown("d") and self.rotation == truncate(core.rotation - 90, 360) then
+        elseif self.parent.isMovingLeft and self.rotation == math.truncate(core.rotation + 90, 360) or 
+            self.parent.isMovingRight and self.rotation == math.truncate(core.rotation - 90, 360) then
             
             self:fire(self.thrustImpulse)
             
-        elseif love.keyboard.isDown("left") and torque <= -self.torqueThreshold or
-            love.keyboard.isDown("right") and torque >= self.torqueThreshold then
+        elseif self.parent.isTurningLeft and torque <= -self.torqueThreshold or
+            self.parent.isTurningRight and torque >= self.torqueThreshold then
                 
             self:fire(self.thrustImpulse)
         else
@@ -129,17 +119,17 @@ function ThrusterModule:update(dt)
 end
 
 function ThrusterModule:fire(amount)
-    local thrustVecX, thrustVecY = self.thrustDir.x * -amount, self.thrustDir.y * -amount
+    local thrustVec = self.thrustDir * -amount
    
-    local impulseVecX, impulseVecY = self.parent.body:getWorldVector(thrustVecX, thrustVecY)
+    local impulseVec = Vector(self.parent.body:getWorldVector(thrustVec.x, thrustVec.y))
     
-    self.parent.body:applyLinearImpulse(impulseVecX, impulseVecY, self:getWorldPos())
+    self.parent.body:applyLinearImpulse(impulseVec.x, impulseVec.y, self:getWorldPos())
     self.thrusterOn = true
 end
 
 function ThrusterModule:connectsTo(rx, ry)
     if rx == 0 and ry == 0 then return true end
-    return math.ceil(self.thrustDir.x * rx + self.thrustDir.y * ry) == -1
+    return math.ceil(self.thrustDir:dotProduct(Vector(rx, ry))) == -1
 end
 
 function ThrusterModule:canStack()
@@ -147,15 +137,5 @@ function ThrusterModule:canStack()
 end
 
 function ThrusterModule:getValidNeighbours()
-    local neighbours = self.super:getValidNeighbours()
-    
-    local directions = {0, 90, 180, 270}
-    
-    for i, v in ipairs(directions) do
-        if v ~= self.rotation then
-            neighbours[i*2-1] = nil
-            neighbours[i*2] = nil
-        end
-    end
-    return neighbours
+    return {}
 end
